@@ -47,6 +47,19 @@ async function createApp() {
   return app;
 }
 
+async function bootstrap() {
+  const application = await createApp();
+  await application.listen(Number(process.env.PORT ?? 4000));
+}
+
+if (require.main === module) {
+  bootstrap().catch((error) => {
+    console.error("SmartSociety API failed to start:");
+    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    process.exit(1);
+  });
+}
+
 export default async function handler(req: any, res: any) {
   const application = await createApp();
   const expressApp = application.getHttpAdapter().getInstance();
