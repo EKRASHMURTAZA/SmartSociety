@@ -7,6 +7,13 @@ import { join } from "node:path";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 
+process.on("unhandledRejection", (reason) => {
+  console.error("[runtime] unhandledRejection (instance kept alive):", reason instanceof Error ? reason.stack ?? reason.message : reason);
+});
+process.on("uncaughtException", (error) => {
+  console.error("[runtime] uncaughtException (instance kept alive):", error instanceof Error ? error.stack ?? error.message : error);
+});
+
 let app: NestExpressApplication | undefined;
 
 async function createApp() {
