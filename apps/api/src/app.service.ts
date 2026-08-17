@@ -4,6 +4,7 @@ import { randomUUID, randomInt } from "node:crypto";
 import argon2 from "argon2";
 import { NotificationStreamService } from "./notification-stream.service";
 import { AiService } from "./ai/ai.service";
+import "./pdf-shim";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { normalizePhone } from "./common/phone";
