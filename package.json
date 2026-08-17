@@ -1,0 +1,46 @@
+{
+  "name": "react-vite-tailwind",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build",
+    "dev:api": "npm --prefix apps/api run dev",
+    "dev:fullstack": "concurrently -n web,api -c blue,green \"npm run dev\" \"npm run dev:api\"",
+    "api:install": "npm --prefix apps/api install",
+    "db:push": "npm --prefix apps/api run db:push",
+    "db:seed": "npm --prefix apps/api run db:seed",
+    "db:reset": "npm --prefix apps/api run db:reset",
+    "check:api": "npm --prefix apps/api run typecheck",
+    "test:api": "npm --prefix apps/api test",
+    "e2e:api": "node scripts/e2e-api.mjs",
+    "check:fullstack": "npm run check && npm run check:api",
+    "db:prepare": "npm run api:install && npm --prefix apps/api run prisma:generate && npm run db:push && npm run db:seed"
+  },
+  "dependencies": {
+    "clsx": "2.1.1",
+    "html5-qrcode": "^2.3.8",
+    "lucide-react": "^1.31.0",
+    "qrcode.react": "^4.2.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-router-dom": "^7.18.2",
+    "tailwind-merge": "3.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.17",
+    "@types/node": "22.19.17",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.1",
+    "concurrently": "^9.1.2",
+    "tailwindcss": "4.1.17",
+    "typescript": "5.9.3",
+    "vite": "7.3.2",
+    "vite-plugin-singlefile": "2.3.0"
+  }
+}

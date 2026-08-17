@@ -1,0 +1,18 @@
+{
+  "name": "SmartSociety",
+  "build": "master-marby-implementation",
+  "source": "SmartSociety_Marby_Integrated.zip",
+  "spec": "MASTER_IMPLEMENTATION_SPEC.md",
+  "database_policy": "No database reset performed while preparing this archive.",
+  "verification": {
+    "static_source_packaged": true,
+    "npm_check": "not executed in this environment because dependency installation could not complete"
+  },
+  "hardening": [
+    "React ErrorBoundary",
+    "branded auth loading state",
+    "prefers-reduced-motion support",
+    "reusable interaction/page motion utilities",
+    "master implementation specification included"
+  ]
+}

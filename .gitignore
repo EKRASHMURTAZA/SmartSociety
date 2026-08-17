@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+**/build/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Prisma generated files
+**/.prisma/
+**/prisma/generated/
+
+# Backend uploads
+apps/api/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+
+# Vite
+.vite/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Testing
+playwright-report/
+test-results/
+
+# Local runtime files
+*.pid

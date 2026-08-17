@@ -1,0 +1,463 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String                @id @default(uuid())
+  role              Role
+  phone             String                @unique
+  email             String?               @unique
+  passwordHash      String
+  name              String
+  avatarUrl         String?
+flatId            String?
+  staffId           String?               @unique
+  staffMeta         Json?
+  isActive          Boolean               @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  bookings          AmenityBooking[]
+  audits            AuditLog[]            @relation("AuditActor")
+  chatMessages      ChatMessage[]
+  complaints        Complaint[]           @relation("ResidentComplaints")
+  assignments       ComplaintAssignment[]
+  emergencyContacts EmergencyContact[]
+  gateLogs          GateLog[]             @relation("GuardGateLogs")
+  householdMembers  HouseholdMember[]
+  knowledgeAuthored KnowledgeArticle[]    @relation("KnowledgeAuthors")
+  noticesCreated    Notice[]              @relation("NoticeAuthors")
+  notifications     Notification[]
+  passwordResets    PasswordResetToken[]
+  payments          Payment[]
+  pollVotes         PollVote[]
+  flat              Flat?                 @relation(fields: [flatId], references: [id], onDelete: SetNull)
+  vehicles          Vehicle[]
+  visitorsCreated   Visitor[]             @relation("ResidentVisitors")
+}
+
+model Flat {
+  id         String            @id @default(uuid())
+  tower      String
+  number     String
+  occupancy  String
+  ownerName  String?
+  tenantName String?
+  createdAt  DateTime          @default(now())
+  complaints Complaint[]
+  bills      MaintenanceBill[]
+  users      User[]
+  visitors   Visitor[]
+
+  @@unique([tower, number])
+}
+
+model Vehicle {
+  id     String @id @default(uuid())
+  userId String
+  label  String
+  number String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmergencyContact {
+  id     String @id @default(uuid())
+  userId String
+  label  String
+  phone  String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HouseholdMember {
+  id       String  @id @default(uuid())
+  userId   String
+  name     String
+  relation String
+  note     String?
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Visitor {
+  id         String        @id @default(uuid())
+  residentId String
+  name       String
+  phone      String
+  photoUrl   String?
+  vehicle    String?
+  flatId     String
+  purpose    String
+  dateISO    DateTime
+  entryTime  String
+  exitTime   String
+  guests     Int           @default(1)
+  passCode   String        @unique
+  passToken  String        @unique
+  status     VisitorStatus @default(PENDING)
+  usedAt     DateTime?
+  entryAt    DateTime?
+  exitAt     DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  gateLogs   GateLog[]
+  flat       Flat          @relation(fields: [flatId], references: [id], onDelete: Restrict)
+  resident   User          @relation("ResidentVisitors", fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([dateISO])
+  @@index([flatId])
+  @@index([residentId, createdAt])
+}
+
+model GateLog {
+  id           String     @id @default(uuid())
+  visitorId    String
+  guardId      String
+  result       GateResult
+  verification String
+  gateName     String     @default("Gate 1")
+  entryAt      DateTime?
+  exitAt       DateTime?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  guard        User       @relation("GuardGateLogs", fields: [guardId], references: [id], onDelete: Restrict)
+  visitor      Visitor    @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  @@index([visitorId, createdAt])
+  @@index([guardId, createdAt])
+}
+
+model Complaint {
+  id          String               @id @default(uuid())
+  number      String               @unique
+  residentId  String
+  flatId      String?
+  category    String
+  title       String
+  description String
+  photoUrl    String?
+  priority    ComplaintPriority    @default(MEDIUM)
+  status      ComplaintStatus      @default(PENDING)
+  slaHours    Int                  @default(24)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  resolvedAt  DateTime?
+  flat        Flat?                @relation(fields: [flatId], references: [id], onDelete: SetNull)
+  resident    User                 @relation("ResidentComplaints", fields: [residentId], references: [id], onDelete: Cascade)
+  assignments ComplaintAssignment[]
+}
+
+model ComplaintAssignment {
+  id          String    @id @default(uuid())
+  complaintId String
+  staffId     String
+  assignedAt  DateTime  @default(now())
+  notes       String?
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  staff       User      @relation(fields: [staffId], references: [id], onDelete: Restrict)
+
+  @@unique([complaintId, staffId])
+  @@index([complaintId])
+  @@index([staffId])
+}
+
+model Amenity {
+  id          String           @id @default(uuid())
+  name        String
+  description String
+  hours       String
+  imageUrl    String?
+  price       String
+  bookings    AmenityBooking[]
+  slots       AmenitySlot[]
+}
+
+model AmenitySlot {
+  id        String  @id @default(uuid())
+  amenityId String
+  startTime String
+  endTime   String
+  active    Boolean @default(true)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+}
+
+model AmenityBooking {
+  id          String        @id @default(uuid())
+  amenityId   String
+  userId      String
+  bookingDate DateTime
+  slot        String
+  status      BookingStatus @default(CONFIRMED)
+  createdAt   DateTime      @default(now())
+  amenity     Amenity       @relation(fields: [amenityId], references: [id])
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([amenityId, bookingDate, slot])
+}
+
+model MaintenanceBill {
+  id         String     @id @default(uuid())
+  flatId     String
+  billNumber String     @unique
+  period     String
+  dueDate    DateTime
+  amountDue  Int
+  status     String     @default("DUE")
+  penalty    Int        @default(0)
+  createdAt  DateTime   @default(now())
+  items      BillItem[]
+  flat       Flat       @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  payments   Payment[]
+}
+
+model BillItem {
+  id     String          @id @default(uuid())
+  billId String
+  label  String
+  amount Int
+  bill   MaintenanceBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id        String          @id @default(uuid())
+  billId    String
+  userId    String
+  receipt   String          @unique
+  amount    Int
+  method    String
+  status    PaymentStatus   @default(PAID)
+  createdAt DateTime        @default(now())
+  bill      MaintenanceBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notice {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  tag       String
+  emergency Boolean  @default(false)
+  published Boolean  @default(true)
+  createdBy String
+  createdAt DateTime @default(now())
+  author    User     @relation("NoticeAuthors", fields: [createdBy], references: [id], onDelete: Restrict)
+}
+
+model Poll {
+  id        String       @id @default(uuid())
+  question  String
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  options   PollOption[]
+  votes     PollVote[]
+}
+
+model PollOption {
+  id        String     @id @default(uuid())
+  pollId    String
+  label     String
+  votes     Int        @default(0)
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollVotes PollVote[]
+}
+
+model PollVote {
+  id        String     @id @default(uuid())
+  pollId    String
+  optionId  String
+  userId    String
+  createdAt DateTime   @default(now())
+  option    PollOption @relation(fields: [optionId], references: [id])
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  category  String
+  title     String
+  body      String
+  tone      String
+  unread    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmergencyAlert {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  actorId   String?
+  action    AuditAction
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime    @default(now())
+  actor     User?       @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([entity, entityId, createdAt])
+}
+
+model SocietySetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model EmergencyContactConfig {
+  id          String   @id @default(uuid())
+  label       String
+  phone       String
+  description String?
+  enabled     Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model KnowledgeArticle {
+  id         String          @id @default(uuid())
+  title      String
+  category   String
+  content    String
+  tags       String[]        @default([])
+  status     KnowledgeStatus @default(DRAFT)
+  version    Int             @default(1)
+  uploadedBy String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  source     String?
+  author     User            @relation("KnowledgeAuthors", fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([status, category])
+}
+
+model KnowledgeDocument {
+  id         String   @id @default(uuid())
+  fileName   String
+  mimeType   String
+  content    String?
+  category   String?
+  status     String   @default("READY")
+  uploadedBy String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  role      String
+  content   String
+  language  String   @default("english")
+  sources   Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+enum Role {
+  RESIDENT
+  GUARD
+  ADMIN
+  MAINTENANCE
+}
+
+enum VisitorStatus {
+  PENDING
+  APPROVED
+  INSIDE
+  COMPLETED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum GateResult {
+  ALLOWED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  VERIFY
+  EXPORT
+  VISITOR_CHECK_IN
+  VISITOR_CHECK_OUT
+  VISITOR_REJECTED
+  SECURITY_ALERT
+  EMERGENCY_ALERT
+  AI_ACTION
+  KNOWLEDGE_CREATED
+  KNOWLEDGE_UPDATED
+  KNOWLEDGE_DELETED
+  PAYMENT_CREATED
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  USER_CREATED
+  USER_UPDATED
+  USER_DEACTIVATED
+  ROLE_CHANGED
+  COMPLAINT_ASSIGNED
+  COMPLAINT_RESOLVED
+}
+
+enum KnowledgeStatus {
+  DRAFT
+  PUBLISHED
+  UNPUBLISHED
+}
