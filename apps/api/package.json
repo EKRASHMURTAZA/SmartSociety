@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "nest start --watch",
-    "build": "nest build",
+    "build": "prisma generate && nest build",
    "start": "node dist/src/main.js",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
